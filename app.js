@@ -1,51 +1,45 @@
-// 搭建网站服务器，实现客户端与服务端的通信
-// 连接数据库，创建用户集合，向集合中插入文档
-// /list：查询所有用户信息
-// /add：添加用户信息
-// /modify：修改用户信息
-// /delete：删除用户信息
-
+// 引入http模块
 const http = require("http");
-const mongoose = require("mongoose");
 
-// 数据库连接
-mongoose
-    .connect("mongodb://localhost/mongoose", {
-        useNewUrlParser: true,
-        useUnifiedTopology: true
-    })
-    // 连接成功
-    .then(() => console.log("数据库连接成功"))
-    // 连接失败
-    .catch(err => console.log(err, "数据库连接失败"));
+// 引入path模块
+const path = require("path");
 
-// 创建用户集合规则
-const UserSchema = new mongoose.Schema({
-    name: {
-        type: String,
-        required: true,
-        minlength: 2,
-        maxlength: 20
-    },
-    age: {
-        type: Number,
-        min: 18,
-        max: 80
-    },
-    password: String,
-    email: String,
-    hobbies: []
-});
+// 引入路由管理
+const router = require("./router/index");
 
-// 创建用户集合 返回集合构造函数
-const User = mongoose.model("User", UserSchema);
+// 引入模板引擎
+const template = require("art-template");
+
+// 引入art引擎日期处理模块
+const dateFormat = require("dateformat");
+
+// 导入模板变量
+template.defaults.imports.dateFormat = dateFormat;
+
+// 设置模板根目录
+template.defaults.root = path.join(__dirname, "views");
+
+// 配置模板的默认后缀
+template.defaults.extname = ".art";
+
+// 引入静态资源访问模块
+const serveStatic = require("serve-static");
+
+// 实现静态资源访问服务
+const serve = serveStatic(path.join(__dirname, "public"));
+
+// 连接数据库
+require("./model/connect");
 
 // 创建服务器
 const app = http.createServer();
 
 // 为服务器对象添加请求事件
-app.on("request", (req, res) => {
-    res.end("ok");
+app.on("request", async (req, res) => {
+    // 挂载路由
+    router(req, res, () => {});
+    // 启用静态资源访问
+    serve(req, res, () => {});
 });
 
 // 监听端口
